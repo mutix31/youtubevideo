@@ -1,4 +1,4 @@
-const API_KEY = 'YOUR_API_KEY';
+const API_KEY = 'AIzaSyAzY7noObHLIYwpx1Z3pkub-1PMCTrHbHM';
 let settings = {
     theme: 'dark',
     maxResults: 24,
