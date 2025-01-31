@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced YouTube Viewer</title>
+    <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --card-bg: #2d2d2d;
+            --primary: #ff4444;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #ffffff;
+            --text-color: #1a1a1a;
+            --card-bg: #f5f5f5;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background 0.3s ease;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            padding: 1rem;
+        }
+
+        .video-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .video-thumbnail {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+
+        #settingsModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 10px;
+            z-index: 1000;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            cursor: pointer;
+        }
+
+        #searchBar {
+            margin: 1rem;
+            width: calc(100% - 2rem);
+        }
+
+        #playerContainer {
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="container">
+        <ul>
+            <li><strong>YT Viewer+</strong></li>
+        </ul>
+        <ul>
+            <li><button onclick="showSettings()">⚙️ Ayarlar</button></li>
+        </ul>
+    </nav>
+
+    <!-- Search Bar -->
+    <div class="container">
+        <input 
+            type="search" 
+            id="searchBar" 
+            placeholder="Video ara..."
+            onkeypress="handleSearch(event)"
+        >
+    </div>
+
+    <!-- Player Container -->
+    <div class="container" id="playerContainer"></div>
+
+    <!-- Video Grid -->
+    <main class="container">
+        <div id="videoGrid" class="video-grid"></div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal">
+        <span class="modal-close" onclick="closeSettings()">✕</span>
+        <h2>⚙️ Ayarlar</h2>
+        
+        <div class="grid">
+            <div>
+                <label>
+                    Tema
+                    <select id="themeSelect">
+                        <option value="dark">Karanlık</option>
+                        <option value="light">Aydınlık</option>
+                    </select>
+                </label>
+                
+                <label>
+                    API Seçimi
+                    <select id="apiSelect">
+                        <option value="piped">Piped</option>
+                        <option value="invidious">Invidious</option>
+                    </select>
+                </label>
+            </div>
+            
+            <div>
+                <label>
+                    Ülke
+                    <select id="countrySelect">
+                        <option value="TR">Türkiye</option>
+                        <option value="US">ABD</option>
+                        <option value="DE">Almanya</option>
+                        <option value="FR">Fransa</option>
+                        <option value="JP">Japonya</option>
+                    </select>
+                </label>
+                
+                <label>
+                    <input type="checkbox" id="safeSearch"> Güvenli Arama
+                </label>
+            </div>
+        </div>
+
+        <button onclick="saveSettings()">Kaydet</button>
+    </div>
+
+    <script>
+        // Yapılandırma
+        const APIS = {
+            piped: {
+                trending: "https://pipedapi.kavin.rocks/trending",
+                search: "https://pipedapi.kavin.rocks/search",
+                embed: "https://piped.kavin.rocks/embed/"
+            },
+            invidious: {
+                trending: "https://inv.riverside.rocks/api/v1/trending",
+                search: "https://inv.riverside.rocks/api/v1/search",
+                embed: "https://inv.riverside.rocks/watch?v="
+            }
+        };
+
+        // Uygulama Durumu
+        let settings = {
+            theme: 'dark',
+            api: 'piped',
+            country: 'TR',
+            safeSearch: false
+        };
+
+        // Başlatıcı
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            loadFeed();
+        });
+
+        // Video Yükleme
+        async function loadFeed() {
+            const url = `${APIS[settings.api].trending}?region=${settings.country}`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                renderVideos(settings.api === 'piped' ? data : data.slice(0, 20));
+            } catch (error) {
+                showError('API yanıt vermiyor. Lütfen daha sonra tekrar deneyin.');
+            }
+        }
+
+        // Video Gösterimi
+        function renderVideos(videos) {
+            const grid = document.getElementById('videoGrid');
+            grid.innerHTML = videos.map(video => `
+                <div class="video-card">
+                    <div onclick="playVideo('${video.videoId}')">
+                        <img class="video-thumbnail" src="${getBestThumbnail(video.videoThumbnails)}">
+                        <div style="padding: 1rem">
+                            <h4 style="margin: 0">${video.title}</h4>
+                            <small>${video.author}</small>
+                            <div style="margin-top: 0.5rem">
+                                <small>${formatDuration(video.lengthSeconds)} • ${video.viewCount} görüntüleme</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Video Oynatma
+        function playVideo(videoId) {
+            const playerHTML = `
+                <div class="video-responsive">
+                    <iframe 
+                        src="${APIS[settings.api].embed}${videoId}"
+                        frameborder="0" 
+                        allowfullscreen
+                    ></iframe>
+                </div>
+            `;
+            document.getElementById('playerContainer').innerHTML = playerHTML;
+        }
+
+        // Arama İşlevi
+        async function search(query) {
+            const params = new URLSearchParams({
+                q: query,
+                region: settings.country,
+                safeSearch: settings.safeSearch ? '1' : '0'
+            });
+            
+            try {
+                const response = await fetch(`${APIS[settings.api].search}?${params}`);
+                const data = await response.json();
+                renderVideos(data);
+            } catch (error) {
+                showError('Arama sırasında hata oluştu');
+            }
+        }
+
+        // Yardımcı Fonksiyonlar
+        function getBestThumbnail(thumbnails) {
+            return thumbnails.reduce((best, current) => 
+                current.width > best.width ? current : best
+            ).url;
+        }
+
+        function formatDuration(seconds) {
+            const date = new Date(0);
+            date.setSeconds(seconds);
+            return date.toISOString().substr(11, 8).replace(/^00:/, '');
+        }
+
+        // Ayarlar Yönetimi
+        function showSettings() {
+            document.getElementById('settingsModal').style.display = 'block';
+            document.getElementById('themeSelect').value = settings.theme;
+            document.getElementById('apiSelect').value = settings.api;
+            document.getElementById('countrySelect').value = settings.country;
+            document.getElementById('safeSearch').checked = settings.safeSearch;
+        }
+
+        function saveSettings() {
+            settings = {
+                theme: document.getElementById('themeSelect').value,
+                api: document.getElementById('apiSelect').value,
+                country: document.getElementById('countrySelect').value,
+                safeSearch: document.getElementById('safeSearch').checked
+            };
+            
+            document.documentElement.setAttribute('data-theme', settings.theme);
+            localStorage.setItem('ytSettings', JSON.stringify(settings));
+            loadFeed();
+            closeSettings();
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem('ytSettings');
+            if(saved) {
+                settings = JSON.parse(saved);
+                document.documentElement.setAttribute('data-theme', settings.theme);
+            }
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function handleSearch(event) {
+            if(event.key === 'Enter') {
+                search(event.target.value);
+            }
+        }
+
+        function showError(message) {
+            alert(`Hata: ${message}`);
+        }
+    </script>
+</body>
+</html>
