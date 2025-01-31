@@ -1,12 +1,19 @@
 :root {
-    --bg-color: #1a1a1a;
-    --text-color: #ffffff;
-    --primary: #ff6b6b;
-    --secondary: #4ecdc4;
-    --accent: #ffe66d;
+    --bg-color: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+    --text-color: #2d3436;
+    --primary: #ffe66d;
+    --secondary: #ff6b6b;
+    --accent: #4ecdc4;
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --hover-effect: saturate(1.2);
 }
 
 .video-card {
-    background: linear-gradient(145deg, var(--primary), var(--secondary));
-    border: 2px solid var(--accent);
+    backdrop-filter: blur(10px);
+    border: 2px solid var(--primary);
+}
+
+body {
+    background: var(--bg-color);
+    color: var(--text-color);
 }
