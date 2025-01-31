@@ -1,0 +1,18 @@
+:root {
+    --bg-color: #0f0f0f;
+    --text-color: #ffffff;
+    --primary: #ff4444;
+    --secondary: #2d2d2d;
+    --accent: #4a4a4a;
+    --card-bg: #1a1a1a;
+    --hover-effect: brightness(0.9);
+}
+
+.video-card {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+body {
+    background: var(--bg-color);
+    color: var(--text-color);
+}
