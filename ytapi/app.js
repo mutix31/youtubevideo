@@ -1,130 +1,75 @@
-// YouTube API Konfigürasyon
-const YT_API_URL = 'https://www.googleapis.com/youtube/v3';
-let API_KEY = localStorage.getItem('ytApiKey') || '';
+const API_KEY = 'YOUR_API_KEY';
+let settings = {
+    theme: 'dark',
+    maxResults: 24,
+    order: 'date',
+    country: 'TR',
+    safeSearch: true
+};
 
-// DOM Elementleri
-const settingsModal = document.getElementById('settingsModal');
-const apiKeyInput = document.getElementById('apiKey');
-const searchInput = document.getElementById('searchInput');
-const videoGrid = document.getElementById('videoGrid');
-
-// Ayarlar Fonksiyonları
-function toggleSettings() {
-    settingsModal.style.display = settingsModal.style.display === 'block' ? 'none' : 'block';
-    apiKeyInput.value = API_KEY;
+// Tema Yönetimi
+function changeTheme(theme) {
+    settings.theme = theme;
+    document.getElementById('theme-style').href = `themes/${theme}.css`;
 }
 
-function saveSettings() {
-    API_KEY = apiKeyInput.value;
-    localStorage.setItem('ytApiKey', API_KEY);
-    toggleSettings();
-    loadTrendingVideos();
-}
+// Video Yükleme
+async function loadContent() {
+    const params = {
+        part: 'snippet',
+        chart: 'mostPopular',
+        regionCode: settings.country,
+        maxResults: settings.maxResults,
+        order: settings.order,
+        safeSearch: settings.safeSearch ? 'strict' : 'none',
+        key: API_KEY
+    };
 
-// Video İşlemleri
-async function loadTrendingVideos() {
-    if (!API_KEY) return alert('Lütfen API anahtarınızı ayarlayın');
-    
     try {
-        const url = new URL(`${YT_API_URL}/videos`);
-        url.search = new URLSearchParams({
-            part: 'snippet,statistics,contentDetails',
-            chart: 'mostPopular',
-            regionCode: 'TR',
-            maxResults: 24,
-            key: API_KEY
-        });
-
-        const response = await fetch(url);
+        const response = await fetch(`https://www.googleapis.com/youtube/v3/videos?${new URLSearchParams(params)}`);
         const data = await response.json();
         renderVideos(data.items);
     } catch (error) {
-        console.error('API Hatası:', error);
-        alert('Video yüklenirken hata oluştu');
+        console.error('Error:', error);
     }
 }
 
-async function searchVideos(query) {
-    if (!API_KEY) return alert('Lütfen API anahtarınızı ayarlayın');
-    
-    try {
-        const searchUrl = new URL(`${YT_API_URL}/search`);
-        searchUrl.search = new URLSearchParams({
-            part: 'snippet',
-            q: query,
-            type: 'video',
-            maxResults: 24,
-            safeSearch: 'moderate',
-            key: API_KEY
-        });
-
-        const searchResponse = await fetch(searchUrl);
-        const searchData = await searchResponse.json();
-        
-        const videoIds = searchData.items.map(item => item.id.videoId);
-        const videosUrl = new URL(`${YT_API_URL}/videos`);
-        videosUrl.search = new URLSearchParams({
-            part: 'snippet,statistics,contentDetails',
-            id: videoIds.join(','),
-            key: API_KEY
-        });
-
-        const videosResponse = await fetch(videosUrl);
-        const videosData = await videosResponse.json();
-        renderVideos(videosData.items);
-    } catch (error) {
-        console.error('Arama Hatası:', error);
-        alert('Arama sırasında hata oluştu');
-    }
-}
-
-function renderVideos(videos) {
-    videoGrid.innerHTML = videos.map(video => `
-        <div class="video-card" onclick="playVideo('${video.id}')">
-            <img src="${video.snippet.thumbnails.medium.url}" 
-                 class="thumbnail" 
-                 alt="${video.snippet.title}">
-            <div style="padding: 1rem">
-                <h4>${video.snippet.title}</h4>
-                <p>${video.snippet.channelTitle}</p>
-                <small>
-                    ${formatNumber(video.statistics.viewCount)} görüntülenme • 
-                    ${formatDuration(video.contentDetails.duration)}
-                </small>
-            </div>
-        </div>
-    `).join('');
-}
-
-// Yardımcı Fonksiyonlar
-function formatDuration(duration) {
-    const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-    const hours = parseInt(match[1]) || 0;
-    const minutes = parseInt(match[2]) || 0;
-    const seconds = parseInt(match[3]) || 0;
-    
-    return [
-        hours > 0 ? hours.toString().padStart(2, '0') : null,
-        minutes.toString().padStart(2, '0'),
-        seconds.toString().padStart(2, '0')
-    ].filter(Boolean).join(':');
-}
-
-function formatNumber(num) {
-    return parseInt(num).toLocaleString('tr-TR');
-}
-
+// Video Oynatıcı
 function playVideo(videoId) {
-    window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+    window.location.href = `video.html?id=${videoId}`;
 }
 
-function handleSearch(event) {
-    if (event.key === 'Enter') {
-        searchVideos(event.target.value);
-    }
+// Video Detay Sayfası (video.js)
+async function loadVideoDetails() {
+    const videoId = new URLSearchParams(window.location.search).get('id');
+    
+    const response = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoId}&key=${API_KEY}`);
+    const data = await response.json();
+    
+    const video = data.items[0];
+    document.getElementById('videoTitle').textContent = video.snippet.title;
+    document.getElementById('description').textContent = video.snippet.description;
+    document.getElementById('viewCount').textContent = `${video.statistics.viewCount} görüntülenme`;
+    document.getElementById('likeCount').textContent = `${video.statistics.likeCount} beğeni`;
+    document.getElementById('publishDate').textContent = new Date(video.snippet.publishedAt).toLocaleDateString();
+
+    // YouTube Player API
+    new YT.Player('player', {
+        height: '500',
+        width: '100%',
+        videoId: videoId,
+        playerVars: {
+            autoplay: 1,
+            controls: 1,
+            modestbranding: 1
+        }
+    });
 }
 
-// Sayfa Yüklendiğinde
-document.addEventListener('DOMContentLoaded', () => {
-    if (API_KEY) loadTrendingVideos();
-});
+// Ayarlar Yönetimi
+function saveSettings() {
+    settings.maxResults = document.getElementById('maxResults').value;
+    settings.order = document.getElementById('order').value;
+    localStorage.setItem('ytSettings', JSON.stringify(settings));
+    loadContent();
+}
