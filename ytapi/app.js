@@ -1,4 +1,4 @@
-const API_KEY = 'AIzaSyAzY7noObHLIYwpx1Z3pkub-1PMCTrHbHM';
+const API_KEY = localStorage.getItem('ytApiKey') || 'YOUR_API_KEY';
 let settings = {
     theme: 'dark',
     maxResults: 24,
@@ -7,69 +7,86 @@ let settings = {
     safeSearch: true
 };
 
-// Tema Yönetimi
+// TEMA YÖNETİMİ
 function changeTheme(theme) {
     settings.theme = theme;
     document.getElementById('theme-style').href = `themes/${theme}.css`;
+    localStorage.setItem('ytSettings', JSON.stringify(settings));
 }
 
-// Video Yükleme
-async function loadContent() {
-    const params = {
-        part: 'snippet',
-        chart: 'mostPopular',
-        regionCode: settings.country,
-        maxResults: settings.maxResults,
-        order: settings.order,
-        safeSearch: settings.safeSearch ? 'strict' : 'none',
-        key: API_KEY
-    };
-
-    try {
-        const response = await fetch(`https://www.googleapis.com/youtube/v3/videos?${new URLSearchParams(params)}`);
-        const data = await response.json();
-        renderVideos(data.items);
-    } catch (error) {
-        console.error('Error:', error);
-    }
-}
-
-// Video Oynatıcı
+// VİDEO OYNATMA
 function playVideo(videoId) {
     window.location.href = `video.html?id=${videoId}`;
 }
 
-// Video Detay Sayfası (video.js)
-async function loadVideoDetails() {
-    const videoId = new URLSearchParams(window.location.search).get('id');
-    
-    const response = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoId}&key=${API_KEY}`);
-    const data = await response.json();
-    
-    const video = data.items[0];
-    document.getElementById('videoTitle').textContent = video.snippet.title;
-    document.getElementById('description').textContent = video.snippet.description;
-    document.getElementById('viewCount').textContent = `${video.statistics.viewCount} görüntülenme`;
-    document.getElementById('likeCount').textContent = `${video.statistics.likeCount} beğeni`;
-    document.getElementById('publishDate').textContent = new Date(video.snippet.publishedAt).toLocaleDateString();
+// VİDEO LİSTELEME
+async function loadContent() {
+    try {
+        const params = new URLSearchParams({
+            part: 'snippet,contentDetails,statistics',
+            chart: 'mostPopular',
+            regionCode: settings.country,
+            maxResults: settings.maxResults,
+            key: API_KEY,
+            safeSearch: settings.safeSearch ? 'strict' : 'none'
+        });
 
-    // YouTube Player API
-    new YT.Player('player', {
-        height: '500',
-        width: '100%',
-        videoId: videoId,
-        playerVars: {
-            autoplay: 1,
-            controls: 1,
-            modestbranding: 1
-        }
-    });
+        const response = await fetch(`${YT_API_URL}/videos?${params}`);
+        const data = await response.json();
+        renderVideos(data.items);
+    } catch (error) {
+        console.error('Hata:', error);
+        showError('İçerik yüklenemedi');
+    }
 }
 
-// Ayarlar Yönetimi
+// VİDEO KARTLARI
+function renderVideos(videos) {
+    const container = document.getElementById('videoGrid');
+    container.innerHTML = videos.map(video => `
+        <div class="video-card" onclick="playVideo('${video.id}')">
+            <img src="${video.snippet.thumbnails.medium.url}" class="thumbnail">
+            <div class="video-info">
+                <h4>${video.snippet.title}</h4>
+                <p>${video.snippet.channelTitle}</p>
+                <small>
+                    ${new Date(video.snippet.publishedAt).toLocaleDateString('tr-TR')} • 
+                    ${video.contentDetails.duration.replace('PT', '').toLowerCase()}
+                </small>
+            </div>
+        </div>
+    `).join('');
+}
+
+// AYARLAR YÖNETİMİ
+function toggleSettings() {
+    const modal = document.getElementById('settingsModal');
+    modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+    document.getElementById('maxResults').value = settings.maxResults;
+    document.getElementById('order').value = settings.order;
+    document.getElementById('country').value = settings.country;
+    document.getElementById('safeSearch').checked = settings.safeSearch;
+}
+
 function saveSettings() {
-    settings.maxResults = document.getElementById('maxResults').value;
-    settings.order = document.getElementById('order').value;
+    settings = {
+        ...settings,
+        maxResults: document.getElementById('maxResults').value,
+        order: document.getElementById('order').value,
+        country: document.getElementById('country').value,
+        safeSearch: document.getElementById('safeSearch').checked
+    };
     localStorage.setItem('ytSettings', JSON.stringify(settings));
     loadContent();
+    toggleSettings();
 }
+
+// BAŞLANGIÇ
+document.addEventListener('DOMContentLoaded', () => {
+    const savedSettings = localStorage.getItem('ytSettings');
+    if(savedSettings) {
+        settings = JSON.parse(savedSettings);
+        changeTheme(settings.theme);
+    }
+    loadContent();
+});
