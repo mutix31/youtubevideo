@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Çevrimdışı Mod</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .offline-container {
+            max-width: 600px;
+            margin: 5rem auto;
+        }
+
+        .offline-icon {
+            font-size: 5rem;
+            color: #ff4444;
+            margin-bottom: 1rem;
+        }
+
+        button {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">⚠️</div>
+        <h1>Çevrimdışı Moddasınız</h1>
+        <p>İnternet bağlantınızı kontrol edip tekrar deneyin.</p>
+        <button onclick="window.location.reload()">Tekrar Dene</button>
+        <p>Önbelleğe alınmış içerikler:</p>
+        <div id="cached-content"></div>
+    </div>
+
+    <script>
+    // Önbelleğe alınmış verileri göster
+    caches.open('yt-viewer-v1')
+        .then(cache => cache.keys())
+        .then(requests => {
+            const contentList = requests
+                .filter(req => req.url.endsWith('.html'))
+                .map(req => `<li>${new URL(req.url).pathname}</li>`)
+                .join('');
+            
+            document.getElementById('cached-content').innerHTML = `
+                <ul style="text-align: left">${contentList}</ul>
+            `;
+        });
+    </script>
+</body>
+</html>
