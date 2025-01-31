@@ -1,81 +1,100 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced YouTube Viewer</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
     <link id="theme-style" rel="stylesheet" href="themes/dark.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- Navbar -->
     <nav class="container">
         <ul>
             <li><strong>YT Viewer Pro</strong></li>
+            <li><button onclick="toggleTheme()" id="themeToggle">🌙</button></li>
         </ul>
         <ul>
             <li><button onclick="toggleSettings()">⚙️ Ayarlar</button></li>
         </ul>
     </nav>
 
-    <!-- Filtreler -->
+    <!-- Filtre Çubuğu -->
     <div class="container filter-bar">
-        <select id="contentType" onchange="loadContent()">
-            <option value="popular">Popüler</option>
-            <option value="subscriptions">Abonelikler</option>
-            <option value="music">Müzik</option>
-        </select>
-        
-        <select id="country" onchange="loadContent()">
-            <option value="TR">Türkiye</option>
-            <option value="US">ABD</option>
-            <option value="DE">Almanya</option>
-        </select>
-
-        <label>
-            <input type="checkbox" id="safeSearch" onchange="loadContent()">
-            Güvenli Arama
-        </label>
+        <div class="grid">
+            <div>
+                <select id="contentType" onchange="loadContent()">
+                    <option value="mostPopular">Popüler</option>
+                    <option value="subscriptions">Abonelikler</option>
+                    <option value="music">Müzik</option>
+                </select>
+                
+                <select id="country" onchange="loadContent()">
+                    <option value="TR">🇹🇷 Türkiye</option>
+                    <option value="US">🇺🇸 ABD</option>
+                    <option value="DE">🇩🇪 Almanya</option>
+                    <option value="FR">🇫🇷 Fransa</option>
+                </select>
+            </div>
+            
+            <div>
+                <label>
+                    <input type="checkbox" id="safeSearch" onchange="loadContent()">
+                    🛡️ Güvenli Arama
+                </label>
+                
+                <select id="sortBy" onchange="loadContent()">
+                    <option value="relevance">Önem Sırası</option>
+                    <option value="date">Tarih</option>
+                    <option value="viewCount">Görüntülenme</option>
+                </select>
+            </div>
+        </div>
     </div>
 
     <!-- Video Grid -->
     <main class="container">
+        <div id="loading" class="loading-spinner"></div>
         <div id="videoGrid" class="video-grid"></div>
     </main>
 
-    <!-- Settings Modal -->
+    <!-- Ayarlar Modali -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
+            <span class="close" onclick="toggleSettings()">&times;</span>
             <h2>⚙️ Gelişmiş Ayarlar</h2>
             
-            <div class="theme-selector">
-                <h3>Tema Seçimi</h3>
-                <div class="theme-options">
-                    <button onclick="changeTheme('dark')">🌙 Karanlık</button>
-                    <button onclick="changeTheme('light')">☀️ Aydınlık</button>
-                    <button onclick="changeTheme('colorful')">🌈 Renkli</button>
+            <div class="theme-section">
+                <h3>🎨 Tema Seçimi</h3>
+                <div class="theme-buttons">
+                    <button class="theme-btn dark" onclick="changeTheme('dark')"></button>
+                    <button class="theme-btn light" onclick="changeTheme('light')"></button>
+                    <button class="theme-btn colorful" onclick="changeTheme('colorful')"></button>
                 </div>
             </div>
 
-            <div class="advanced-settings">
-                <h3>Gelişmiş Filtreler</h3>
+            <div class="preferences">
+                <h3>🔧 Tercihler</h3>
                 <label>
-                    Maksimum Sonuç:
-                    <input type="number" id="maxResults" value="24" min="1" max="50">
+                    Sayfa Başına Video:
+                    <input type="number" id="maxResults" min="10" max="50" value="24">
                 </label>
                 
                 <label>
-                    Sıralama:
-                    <select id="order">
-                        <option value="date">Tarih</option>
-                        <option value="viewCount">Görüntülenme</option>
-                        <option value="rating">Beğeni</option>
+                    Varsayılan Kalite:
+                    <select id="defaultQuality">
+                        <option value="hd1080">1080p</option>
+                        <option value="hd720">720p</option>
+                        <option value="medium">480p</option>
                     </select>
                 </label>
             </div>
 
-            <button onclick="saveSettings()">Kaydet</button>
-            <button onclick="toggleSettings()">Kapat</button>
+            <div class="actions">
+                <button class="save-btn" onclick="saveSettings()">💾 Kaydet</button>
+                <button class="reset-btn" onclick="resetSettings()">🔄 Sıfırla</button>
+            </div>
         </div>
     </div>
 
