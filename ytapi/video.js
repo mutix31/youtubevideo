@@ -1,5 +1,5 @@
 // API Anahtarını localStorage'dan al
-const API_KEY = localStorage.getItem('ytApiKey') || 'YOUR_API_KEY';
+const API_KEY = localStorage.getItem('ytApiKey') || 'AIzaSyAzY7noObHLIYwpx1Z3pkub-1PMCTrHbHM';
 
 // YouTube Player instance'ı
 let player;
