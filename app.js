@@ -1,13 +1,17 @@
 const API_INSTANCES = {
     piped: [
-        'https://pipedapi-libre.kavin.rocks',
-        'https://piped-api.garudalinux.net',
-        'https://watchapi.whatever.social'
+        'https://pipedapi.leptons.xyz/',
+        'https://pipedapi.adminforge.de',
+        'https://api.piped.yt',
+        'https://pipedapi.drgns.space',
+        'https://piapi.ggtyler.dev',
+        'https://api.piped.private.coffee',
+        'https://pipedapi.ducks.party'
     ],
     invidious: [
-        'https://inv.odyssey346.dev',
-        'https://inv.zzls.xyz',
-        'https://vid.puffyan.us'
+        'https://inv.nadeko.net',
+        'https://yewtu.be',
+        'https://invidious.0011.lt'
     ]
 };
 
